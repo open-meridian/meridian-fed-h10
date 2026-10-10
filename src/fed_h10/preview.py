@@ -33,7 +33,9 @@ from .page import CONNECTION, DATASETS, hold, pages
 from .raw import RawStore
 
 AT = datetime(2026, 10, 10, 11, 0, tzinfo=UTC)
-PAGES = {"connection": CONNECTION, "datasets": DATASETS}
+PAGES = {"connection": CONNECTION, "datasets": DATASETS, "datasets-search": DATASETS}
+#: What the Datasets tab's search is shown with, as `datasets-search`.
+SEARCHED = "dollar"
 
 
 def _want(want_id: str, subject: str, day: str = "", standing: bool = False) -> Heard:  # type: ignore[type-arg]
@@ -65,7 +67,8 @@ async def synthetic_feed() -> Feed:
 def render(page: str) -> str:
     feed = asyncio.run(synthetic_feed())
     hold(feed)
-    answer = PageClient(pages).get(PAGES[page], "admin")
+    query = {"q": SEARCHED} if page == "datasets-search" else {}
+    answer = PageClient(pages).get(PAGES[page], "admin", **query)
     if answer.status != 200:
         raise SystemExit(f"{page} answered {answer.status}: {answer.text[:200]}")
     return answer.text

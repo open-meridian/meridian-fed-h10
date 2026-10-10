@@ -28,16 +28,24 @@
 </section>
 <section class="panel">
 {% if data.currencies %}
+<div class="panel-body"><form class="filters" method="get" role="search">
+<input type="search" name="q" value="{{ query }}" placeholder="Search currencies" aria-label="Search currencies by code or name">
+<button>Search</button>{% if query %} <a href="?">Clear</a>{% endif %}
+<span class="muted">{{ shown | length }} of {{ data.currencies | length }}</span></form></div>
+{% if shown %}
 <om-pager>
 <table class="one-line">
 <thead><tr><th>Code</th><th class="wide-only">The Board's name</th><th class="wide-only">Quoted</th><th>Price of</th><th>Instrument</th><th class="more"><span class="visually-hidden">Details</span></th></tr></thead>
 <tbody>
-{% for c in data.currencies %}
+{% for c in shown %}
 <tr data-code="{{ c.code }}"><td><code>{{ c.code }}</code></td><td class="wide-only">{{ c.board_name }}</td><td class="wide-only">{{ c.quoted }}</td><td>{{ c.price_of }}</td><td>{% if c.instrument_id %}<code>{{ c.instrument_id }}</code>{% else %}<span class="badge warn">{{ c.miss or "not yet resolved" }}</span>{% endif %}</td><td class="more"><details class="row-detail" name="currencies"><summary aria-label="Details of {{ c.code }}">…</summary><div class="row-detail-pop"><h3>{{ c.code }}</h3><dl><dt>The Board's name</dt><dd>{{ c.board_name }}</dd><dt>Quoted</dt><dd>{{ c.quoted }}</dd><dt>Each rate is the price of</dt><dd>{{ c.price_of }}</dd><dt>The deployment's instrument</dt><dd>{% if c.instrument_id %}<code>{{ c.instrument_id }}</code>, its cash instrument by ISO 4217 {{ c.code }}{% else %}None: {{ c.miss or "not yet resolved" }}, reported missing; its rates wait until it resolves{% endif %}</dd></dl></div></details></td></tr>
 {% endfor %}
 </tbody>
 </table>
 </om-pager>
+{% else %}
+<div class="empty-state"><strong>No currency matches "{{ query }}"</strong><p>Search by its ISO code or the Board's name for it.</p></div>
+{% endif %}
 {% else %}
 <div class="empty-state"><strong>No release read yet</strong><p>Each currency appears once the plugin has read the Board's current release.</p></div>
 {% endif %}

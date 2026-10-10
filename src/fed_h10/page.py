@@ -48,6 +48,8 @@ pages = meridian.Pages(TITLE, templates=Path(__file__).parent / "templates", kit
 CONNECTION = "/"
 DATASETS = "/datasets"
 
+#: The longest search the Datasets tab reads.
+MOST_QUERY = 100
 #: How many wants the Datasets tab lists; read_datasets answers every one held.
 SHOWN_WANTS = 3
 
@@ -212,6 +214,13 @@ def _day(value: str) -> str:
     return date.fromisoformat(value).strftime("%a %d %b") if value else ""
 
 
+def matching(query: str, *texts: str) -> bool:
+    """Whether every word of a search is in one of `texts`, case aside."""
+    words = query.lower().split()
+    held = " ".join(texts).lower()
+    return all(word in held for word in words)
+
+
 pages.environment.filters["moment"] = _moment
 pages.environment.filters["day"] = _day
 
@@ -252,9 +261,14 @@ async def connection(request: meridian.Request) -> meridian.Response:
 async def datasets(request: meridian.Request) -> meridian.Response:
     status, feed = _status()
     data = datasets_read(status, feed)
+    # A browser's search narrows the rows drawn; a tool answers them all.
+    query = request.query.get("q", "").strip()[:MOST_QUERY]
+    shown = [c for c in data.currencies if matching(query, c.code, c.board_name)]
     return pages.answer(
         "datasets.html",
         data,
+        query=query,
+        shown=shown,
         state=_state(status),
         checked_at=_iso(status.checked_at),
         shown_wants=data.wants[:SHOWN_WANTS],

@@ -104,3 +104,17 @@ def test_the_board_not_reached(tmp_path: Path) -> None:
     text = PageClient(pages).get(CONNECTION, "admin").text
     assert 'state="error"' in text and "The Board was not reached" in text
     assert "ConnectionRefusedError" in text
+
+
+def test_the_currencies_are_searched(client: PageClient) -> None:
+    text = client.get(DATASETS, "admin", q="dollar").text
+    assert 'type="search"' in text and 'value="dollar"' in text
+    codes = {
+        c for c in ("AUD", "CAD", "HKD", "NZD", "SGD", "TWD", "USD") if f'data-code="{c}"' in text
+    }
+    assert codes == {"AUD", "CAD", "HKD", "NZD", "SGD", "TWD", "USD"}
+    assert 'data-code="CHF"' not in text and "7 of 24" in text
+    nothing = client.get(DATASETS, "admin", q="drachma").text
+    assert "No currency matches" in nothing and "0 of 24" in nothing
+    # The tool answers every currency, whatever a browser searched.
+    assert len(client.call_tool("read_datasets").data["currencies"]) == 24
