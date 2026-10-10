@@ -1,9 +1,9 @@
 """The `dgm` suite (meridian.suites, contract v18), each case H.10 presents
 mapped to the plugin's own conversion of the Board's recorded responses.
 
-H.10 presents eight of the suite's twelve cases. Four ask for what the Board
-never states, and the plugin has no conversion for them, so they have no
-producer here:
+H.10 presents eight of the suite's thirteen cases. Five ask for what the
+Board never states, and the plugin has no conversion for them, so they have
+no producer here:
 
 - `a-daily-bar`: H.10 is one rate a day, no open, high, low or volume;
 - `a-stablecoin-quote`: H.10 quotes currencies against the US dollar, no
@@ -15,9 +15,9 @@ producer here:
 The SDK's runner lets only a closed-list case be "not presented", and none
 of these is one, so by the runner's rule the plugin is short of the suite
 and not verified: the test below holds it to exactly the eight it presents
-and to those four failing for want of a producer, never for a wrong answer.
-That the suite has no way for a source to say it states no bars, no tokens
-and no venue is a question for the suite's owner (meridian-design
+and to those five failing for want of a producer, never for a wrong answer.
+That the suite has no way for a source to say it states no bars, no tokens,
+no venue and no security is a question for the suite's owner (meridian-design
 matrix/boundaries/suites/dgm.yaml), raised with this build.
 
 `the-forming-day-restated`: H.10's day is never forming once published, but
@@ -46,6 +46,7 @@ NOT_PRESENTED = {
     "a-stablecoin-quote": "H.10 quotes currencies against the US dollar: no token",
     "a-venue-resolved": "H.10's rates are the New York Fed's, no venue's",
     "a-venue-not-held": "H.10's rates are the New York Fed's, no venue's",
+    "a-subject-another-source-resolved": "H.10 rates currencies: no security another source named",
 }
 
 

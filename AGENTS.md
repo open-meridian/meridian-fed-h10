@@ -57,9 +57,9 @@ meridian-design's `plans/the-lake-prices-the-book.md`, row 7.
   `src/fed_h10/responses/`, and list them in its `index.json` with their
   Date and Last-Modified headers.
 - **The suite.** `tests/test_suite.py` runs `meridian.suites.run("dgm", ...)`
-  on the plugin's own conversion. H.10 presents eight of its twelve cases;
-  the four it cannot (a bar, a stablecoin, a venue resolved, a venue not
-  held) fail for want of a producer, which the test holds exactly. Never
+  on the plugin's own conversion. H.10 presents eight of its thirteen cases;
+  the five it cannot (a bar, a stablecoin, a venue resolved, a venue not
+  held, a security another source named) fail for want of a producer, which the test holds exactly. Never
   write a producer that invents what the Board does not state.
 
 ## Checking it locally

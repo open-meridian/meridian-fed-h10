@@ -44,20 +44,22 @@ serves, never a rate: **Connection** (`read_connection`) and **Datasets**
     make ci-local                                  # lint, tests, plugin check, image, e2e: the pre-push gate
     make preview SHOTS=<dir>                       # each page in a browser with the kit, at 1440x900 and 390x844
 
-`make e2e` runs it on core's plugin harness (core b1b8420, the first with the
-lake) beside a reading plugin: the Board unreachable at first, then synthetic
+`make e2e` runs it on core's plugin harness (core e4a14fc, contract v18 as
+ruled 2026-10-10) beside a reading plugin: the Board unreachable at first, then synthetic
 mode reading the committed release of 5 October 2026, the rates read back in
 the right instruments, a past week wanted and recorded, a week not yet
 published and a currency it never prices declined, both tools answering what
 the pages show, and a new container recording nothing twice.
 
 **The `dgm` suite.** `tests/test_suite.py` runs the SDK's suite on the
-plugin's own conversion. H.10 presents eight of its twelve cases. The other
-four ask for what the Board never states -- a day's open, high, low and
-volume, a stablecoin's quote, a venue -- and the SDK's runner lets only a
-closed-list case be not presented, so by its rule the plugin is short of the
-suite and not verified; the test holds it to exactly that. Whether a source
-may say it states no bars, tokens or venues is the suite's owner's to decide.
+plugin's own conversion. H.10 presents eight of its thirteen cases. The
+other five ask for what the Board never states -- a day's open, high, low and
+volume, a stablecoin's quote, a venue, a security another source named by
+its symbol and CUSIP -- and the SDK's runner lets only a closed-list case be
+not presented, so by its rule the plugin is short of the suite and not
+verified; the test holds it to exactly that. Whether a source may say it
+states no bars, tokens, venues or securities is the suite's owner's to
+decide.
 
 **CI is red until open-meridian 0.22.0 is on PyPI** and its base image on
 ghcr.io: the runners install the pin from there. Locally the Makefile builds
