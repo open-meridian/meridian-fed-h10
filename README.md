@@ -1,0 +1,92 @@
+# meridian-fed-h10
+
+An [Open Meridian](https://open-meridian.com) plugin that puts the Federal
+Reserve Board's [H.10](https://www.federalreserve.gov/releases/h10/current/default.htm)
+foreign exchange rates into a deployment's lake: each week's noon buying
+rates in New York for about two dozen currencies against the US dollar, each
+rate the price of one currency's cash instrument in the other, as the Board
+quotes it. It holds the `dgm` role. This is release 0.1.0, not released yet.
+How to set it up and use it is in [docs/](docs/README.md); how a plugin like
+it is built is documented at [open-meridian.dev](https://open-meridian.dev).
+
+It is built on the SDK it pins, `open-meridian==0.22.0`, which declares
+contract v18, the lake prices the book (meridian-design
+`plans/the-lake-prices-the-book.md`, row 7).
+
+## What it records
+
+- **One dataset, `<instance>:daily`:** prices, pushed when each weekly
+  release appears and pulled for any past week the lake wants; weekly; ten
+  years of history; New York's day, ending at noon; no venue; public domain.
+- **Each rate as the Board quotes it.** Most currencies are quoted per US
+  dollar, so CHF 0.8293 is the price of the dollar's cash instrument, in
+  francs. The euro, the pound and the Australian and New Zealand dollars are
+  quoted in US dollars per unit (the Board's asterisk), so EUR 1.1259 is the
+  price of the euro's cash instrument, in dollars. Nothing is inverted: a
+  reader wanting the other way inverts it, and says so.
+- **A close for its business date.** The rate's date as the Board prints it
+  is the business date, a plain date; the price's kind is `close`, the
+  dataset's declared close (the noon rate); its published time is when the
+  Board's server says the release's page was last modified.
+- **Exact.** Every rate is made a decimal from the text the Board printed.
+- **Every currency resolved** to the deployment's cash instrument by its
+  ISO 4217 code, a miss reported with why; a day the Board marks `ND` is no
+  rate, never a zero; its dollar indexes are not recorded.
+- **Every response kept** as received, in the storage the deployment grants,
+  and named by each row it was read into.
+
+Its pages, under Manage alone, show how it reaches the Board and what it
+serves, never a rate: **Connection** (`read_connection`) and **Datasets**
+(`read_datasets`), each the same through the deployment's MCP.
+
+## Checking it
+
+    make ci-local                                  # lint, tests, plugin check, image, e2e: the pre-push gate
+    make preview SHOTS=<dir>                       # each page in a browser with the kit, at 1440x900 and 390x844
+
+`make e2e` runs it on core's plugin harness (core b1b8420, the first with the
+lake) beside a reading plugin: the Board unreachable at first, then synthetic
+mode reading the committed release of 5 October 2026, the rates read back in
+the right instruments, a past week wanted and recorded, a week not yet
+published and a currency it never prices declined, both tools answering what
+the pages show, and a new container recording nothing twice.
+
+**The `dgm` suite.** `tests/test_suite.py` runs the SDK's suite on the
+plugin's own conversion. H.10 presents eight of its twelve cases. The other
+four ask for what the Board never states -- a day's open, high, low and
+volume, a stablecoin's quote, a venue -- and the SDK's runner lets only a
+closed-list case be not presented, so by its rule the plugin is short of the
+suite and not verified; the test holds it to exactly that. Whether a source
+may say it states no bars, tokens or venues is the suite's owner's to decide.
+
+**CI is red until open-meridian 0.22.0 is on PyPI** and its base image on
+ghcr.io: the runners install the pin from there. Locally the Makefile builds
+both from the sibling meridian-python checkout.
+
+## The terms, summarised
+
+Not legal advice; read the Board's own words before relying on them.
+
+- **Public domain.** The Board's site says its information is in the public
+  domain and "may be copied and distributed without permission"
+  ([disclaimer](https://www.federalreserve.gov/disclaimer.htm)); it asks
+  that the Board be cited as the source. So the dataset's default licence
+  is kept, with no limit on retention, derived use or display, and not one
+  person's terms (`personal_use` false). A deployment's licence on its Data
+  sources page confirms or replaces it.
+- **Read from the Board itself,** not through FRED, whose API has terms and a
+  key of its own.
+- **What the rates are.** Noon buying rates in New York for cable transfers
+  payable in foreign currencies, certified by the Federal Reserve Bank of New
+  York for customs purposes: midday rates, not a close in a market's sense,
+  published weekly on Monday (the next business day after a holiday) for the
+  week before. A valuation for yesterday has no H.10 rate until the next
+  release; each rate's date is shown with it.
+- **No endorsement.** This project is not affiliated with or endorsed by the
+  Federal Reserve.
+
+## Licence
+
+Apache-2.0 (LICENSE, NOTICE). The Board's responses under
+`src/fed_h10/responses/` are its pages as received on 2026-10-10, public
+domain.

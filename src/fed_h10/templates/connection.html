@@ -1,0 +1,28 @@
+{#- Connection, at admin: how the plugin reaches the Board's H.10, and how
+    the last check went. No rate: prices are the reading roles'. -#}
+{% extends "meridian/base.html" %}
+{% import "_kit.html" as kit with context %}
+{% block status %}{{ kit.status(data.state, data.said, detail, data.checked_at) }}{% endblock %}
+{% block content %}
+{% if data.error %}<div class="notice bad" role="alert">The last check failed: {{ data.error }}</div>{% endif %}
+{% if data.mode == "synthetic" %}<div class="notice warn" role="status">Synthetic mode: the Board's responses recorded on 2026-10-10, not its site.</div>{% endif %}
+<div class="tiles">
+{{ kit.tile("Latest release", data.latest_release | day if data.latest_release else "Not yet", (data.first_day | day) ~ " to " ~ (data.last_day | day) if data.first_day else "") }}
+{{ kit.tile("Published", data.published_at[11:16] ~ " UTC" if data.published_at else "Not stated", data.published_at[:10]) }}
+{{ kit.tile("Next release", data.next_release | day if data.next_release else "Not known", "after 16:15 New York" if data.next_release else "") }}
+{{ kit.tile("Last checked", data.checked_at[11:16] ~ " UTC" if data.checked_at else "Not yet", data.checked_at[:10] if data.checked_at else "") }}
+</div>
+<section class="panel">
+<div class="panel-body"><h2>The Board's H.10</h2>
+<p class="muted">Noon buying rates in New York, certified by the New York Fed, released weekly.</p></div>
+<table class="one-line">
+<tbody>
+<tr><th scope="row">Source</th><td>{{ data.source }}</td><td class="more"><details class="row-detail" name="connection"><summary aria-label="Details of the source">…</summary><div class="row-detail-pop"><h3>Source</h3><dl><dt>Reads</dt><dd>{{ data.source }}</dd><dt>Mode</dt><dd>{{ data.mode }}</dd><dt>Pages read since start</dt><dd>{{ data.pages_read }}</dd></dl></div></details></td></tr>
+<tr><th scope="row">Key</th><td>{{ data.key }}</td><td class="more"></td></tr>
+<tr><th scope="row">Limits</th><td>{{ data.limits }}</td><td class="more"><details class="row-detail" name="connection"><summary aria-label="Details of the limits">…</summary><div class="row-detail-pop"><h3>Limits</h3><p>{{ data.limits }}</p></div></details></td></tr>
+<tr><th scope="row">Responses kept</th><td>{{ data.responses_kept }}{% if data.kept_for %}, {{ data.kept_for }}{% endif %}</td><td class="more"><details class="row-detail" name="connection"><summary aria-label="Details of the responses kept">…</summary><div class="row-detail-pop"><h3>Responses kept</h3><p>Each response of the Board's is kept as received before anything is read from it, and every rate names the one it came from. {{ data.responses_kept }} kept{% if data.kept_for %}, {{ data.kept_for }}{% endif %}.</p></div></details></td></tr>
+<tr><th scope="row">Pages read</th><td>{{ data.pages_read }} since the plugin started</td><td class="more"></td></tr>
+</tbody>
+</table>
+</section>
+{% endblock %}

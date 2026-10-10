@@ -1,0 +1,10 @@
+meridian-fed-h10
+Copyright 2026 Societal Lab Inc.
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+The foreign exchange rates this plugin reads are the Board of Governors of
+the Federal Reserve System's H.10 release, which the Board publishes as
+public domain. This project is not affiliated with or endorsed by the
+Federal Reserve. The responses under src/fed_h10/responses/ are the Board's
+pages as received on 2026-10-10.
