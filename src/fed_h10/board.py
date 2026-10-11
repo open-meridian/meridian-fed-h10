@@ -40,7 +40,7 @@ from typing import Protocol
 
 BASE = "https://www.federalreserve.gov"
 CURRENT = "/releases/h10/current/default.htm"
-USER_AGENT = "meridian-fed-h10 (+https://github.com/open-meridian/meridian-fed-h10)"
+USER_AGENT = "meridian-fed-h10 (+https://github.com/open-meridian/plugin-fed-h10)"
 #: The least time between two requests to the Board, in seconds.
 SPACING = 2.0
 #: How long one request may take.
