@@ -202,8 +202,12 @@ class Feed:
             if held.instrument_id:
                 continue
             identifier = ops.Identifier(scheme="iso4217", value=code)
+            # As of now, said: an as-of left out is the epoch, which no
+            # identifier window the deployment keeps from a date covers, and
+            # a record was minted beside the currency's (2026-10-10, USD).
             found = await self.plugin.resolve_identifier(
                 identifiers=[identifier],
+                as_of_ns=_ns(self.now()),
                 stated_asset_class="cash",
                 stated_currency=code,
                 stated_description=f"{code} cash",

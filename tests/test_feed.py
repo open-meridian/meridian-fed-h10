@@ -176,3 +176,19 @@ def test_the_release_holding_a_day() -> None:
     # Labor Day: the week of 31 August came out on Tuesday 8 September.
     assert date(2026, 9, 8) in release_days(date(2026, 9, 4))
     assert AT.date() == date(2026, 10, 10)
+
+
+async def test_each_currency_is_resolved_as_of_now(tmp_path: Path) -> None:
+    """Said, never left out: an as-of left out is the epoch, which no window
+    the deployment keeps from a date covers (2026-10-10, USD minted beside
+    the currency's record)."""
+    recorder = Recorder("fed-h10")
+    asked: list[int] = []
+
+    def resolved(params: ops.ResolveIdentifierParams) -> ops.ResolveIdentifierResult:
+        asked.append(params.as_of_ns)
+        return ops.ResolveIdentifierResult(found=True, instrument_id=f"LCL-{len(asked)}")
+
+    recorder.answer("ResolveIdentifier", resolved)
+    await feed(tmp_path, recorder).check()
+    assert asked and set(asked) == {int(AT.timestamp() * 1_000_000_000)}
