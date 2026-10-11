@@ -1,4 +1,4 @@
-"""The pages as synthetic mode shows them, each printed as one HTML file:
+"""The pages on sample data, each printed as one HTML file:
 for looking at them without a deployment.
 
     python -m fed_h10.preview connection > preview/connection.html
@@ -13,7 +13,9 @@ yet), and a standing want kept current. Each page links the kit where the
 dashboard serves it, /.meridian/ui/<version>/: served beside the kit it is
 styled (meridian-ui's `make serve`, or `make preview SHOTS=...`, which checks
 each in a browser); opened on its own it is the page without the kit,
-unstyled, which works too.
+unstyled, which works too. `connection-first` and `datasets-first` are the
+pages before the first check, with no want yet: the role's "not set up yet"
+states.
 """
 
 from __future__ import annotations
@@ -33,7 +35,13 @@ from .page import CONNECTION, DATASETS, hold, pages
 from .raw import RawStore
 
 AT = datetime(2026, 10, 10, 11, 0, tzinfo=UTC)
-PAGES = {"connection": CONNECTION, "datasets": DATASETS, "datasets-search": DATASETS}
+PAGES = {
+    "connection": CONNECTION,
+    "datasets": DATASETS,
+    "datasets-search": DATASETS,
+    "connection-first": CONNECTION,
+    "datasets-first": DATASETS,
+}
 #: What the Datasets tab's search is shown with, as `datasets-search`.
 SEARCHED = "dollar"
 
@@ -54,7 +62,7 @@ def _want(want_id: str, subject: str, day: str = "", standing: bool = False) -> 
 
 
 async def synthetic_feed() -> Feed:
-    """A feed as synthetic mode leaves it, on the recorder."""
+    """A feed as sample data leaves it, on the recorder."""
     feed = Feed(Recorder("fed-h10"), SyntheticBoard(lambda: AT), RawStore(), now=lambda: AT)
     await feed.check()
     usd = feed.status.currencies["USD"].instrument_id
@@ -65,7 +73,10 @@ async def synthetic_feed() -> Feed:
 
 
 def render(page: str) -> str:
-    feed = asyncio.run(synthetic_feed())
+    if page.endswith("-first"):
+        feed = Feed(Recorder("fed-h10"), SyntheticBoard(lambda: AT), RawStore(), now=lambda: AT)
+    else:
+        feed = asyncio.run(synthetic_feed())
     hold(feed)
     query = {"q": SEARCHED} if page == "datasets-search" else {}
     answer = PageClient(pages).get(PAGES[page], "admin", **query)

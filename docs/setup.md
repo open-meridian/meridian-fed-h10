@@ -3,7 +3,7 @@
 ## Launching it
 
 H.10 needs no key and no account: the Board's site is public. Launch the
-plugin and approve its one role, `dgm`. It reads the Board at once, and
+plugin and approve its one role, `data` (a data plugin). It reads the Board at once, and
 every hour after.
 
 Its settings, in the dashboard's Settings form:
@@ -11,7 +11,7 @@ Its settings, in the dashboard's Settings form:
 - **Raw responses window** and **past the window** (the SDK's): how long the
   Board's responses are kept in the plugin's storage, ten years by default,
   and whether they are then archived, kept or deleted.
-- **Synthetic mode**, on a deployment installed for development only: the
+- **Sample data**, on a deployment installed for development only: the
   Board's responses recorded on 10 October 2026, committed with the plugin,
   in place of the site. For trying it offline.
 

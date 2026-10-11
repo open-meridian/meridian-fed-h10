@@ -1,18 +1,19 @@
 """`make e2e`: the plugin on the plugin harness of the runtime it pins
-(contract v18), beside `reader`, a reporting plugin (e2e/reader.py) entitled
+(contract v20), beside `reader`, a reporting plugin (e2e/reader.py) entitled
 to its dataset, and the harness's admin. Run from the repository's root by
 the Makefile, which builds the image and writes the harness's plugins first;
 standard library only.
 
 1. The Board unreachable: the plugin's hosts file sends the Board's site
-   nowhere, so its first check fails, and Connection says so -- "The Board
-   was not reached" -- and records nothing.
-2. Synthetic mode on (a developer's setting, accepted on the harness): the
+   nowhere, so its first check fails, and Connection says so -- "Not
+   answering", the data role's word -- and records nothing.
+2. Sample data on (a developer's setting, accepted on the harness): the
    plugin reads the committed release of 5 October 2026, resolves the
    dollar and the 23 currencies to cash instruments, and records 115 rates;
    Datasets lists each currency with its instrument.
 3. Parity: through the deployment's MCP, `read_connection` and
-   `read_datasets` answer what the pages show -- the release, its days, its
+   `read_datasets` answer what the pages show, under the data role's names
+   (contract v20) -- the release, its days, its
    publication, every currency's instrument -- and core's
    `dashboard__list_datasets` lists `fed-h10:daily` as the catalogue declares
    it: push and pull, weekly, New York's day ending at noon, public domain.
@@ -136,17 +137,17 @@ def run():
     runner("ready", "--instance", "reader")
 
     # 1. The Board unreachable.
-    page_said = runner("page", "--level", "admin", "/", "--until", "The Board was not reached",
+    page_said = runner("page", "--level", "admin", "/", "--until", "Not answering",
                        "--seconds", "90")
     must("ConnectionRefusedError" in page_said or "URLError" in page_said or "Error" in page_said,
          f"step 1, Connection names why the Board was not reached: {page_said[-500:]}")
     lake = store_lake()
     must("row|" not in lake, f"step 1, nothing recorded with the Board unreachable: {lake}")
 
-    # 2. Synthetic mode: the release of 5 October 2026 recorded.
-    runner("settings", "synthetic=true")
+    # 2. Sample data: the release of 5 October 2026 recorded.
+    runner("settings", "sample_data=true")
     runner("page", "--level", "admin", "/datasets", "--until", 'data-code="VES"', "--seconds", "120")
-    runner("page", "--level", "admin", "/", "--until", "H.10 read", "--seconds", "60")
+    runner("page", "--level", "admin", "/", "--until", "Mon 05 Oct", "--seconds", "60")
     until(60, lambda: store_lake().count("row|fed-h10:daily|price|") >= 115,
           "step 2, the release's 115 rates were not recorded")
 
@@ -159,13 +160,14 @@ def run():
     must(read_connection and read_datasets, f"step 3, the plugin's two tools are listed: {tools}")
     connection = call(read_connection)
     must(connection["latest_release"] == "2026-10-05" and connection["first_day"] == "2026-09-28"
-         and connection["last_day"] == "2026-10-02" and connection["mode"] == "synthetic"
+         and connection["last_day"] == "2026-10-02" and connection["mode"] == "Sample data"
+         and connection["credentials"] == [] and connection["sessions"] is None
          and connection["published_at"] == "2026-10-05T20:15:04+00:00",
          f"step 3, read_connection: {connection}")
     datasets = call(read_datasets)
     codes = {c["instrument_id"]: c["code"] for c in datasets["currencies"] if c["instrument_id"]}
     ids = {code: instrument for instrument, code in codes.items()}
-    must(len(ids) == 24 and datasets["dataset"]["dataset"] == DATASET,
+    must(len(ids) == 24 and datasets["served"][0]["dataset"] == DATASET,
          f"step 3, read_datasets names 24 instruments: {datasets}")
     shown = page("fed-h10", "admin", "/datasets")
     must(all(instrument in shown for instrument in codes), "step 3, Datasets shows what read_datasets answers")
@@ -222,7 +224,7 @@ def run():
     # 8. A new container records nothing twice.
     compose("up", "-d", "--no-deps", "--force-recreate", "fed-h10")
     runner("ready")
-    until(120, lambda: "H.10 read" in page("fed-h10", "admin", "/"),
+    until(120, lambda: "Mon 05 Oct" in page("fed-h10", "admin", "/"),
           "step 8, the new container did not read the release again")
     time.sleep(5)
     again = named(store_lake(), codes)
@@ -231,16 +233,18 @@ def run():
     logs = compose("logs", "--no-color", "fed-h10").stdout
     must("0 rates recorded, 0 restated, 115 unchanged" in logs,
          "step 8, the new container's check was answered unchanged: " + logs[-800:])
+    until(90, lambda: all(s["licensed"] for s in call(read_datasets)["served"]),
+          "step 8, the new container never read its dataset's licence")
 
     rows = got.count("row|")
     print(f"e2e OK in {int(time.time() - started)}s on the plugin harness: the Board unreachable said on "
-          f"Connection, nothing recorded; synthetic mode's release of 5 October 2026 recorded, 24 currencies "
+          f"Connection, nothing recorded; sample data's release of 5 October 2026 recorded, 24 currencies "
           f"resolved; read_connection and read_datasets answering what the pages show, and core listing "
           f"{DATASET} as declared; licensed and entitled; the dollar priced in 19 currencies (francs 0.8293) "
           f"and the euro in dollars (1.1259), each a close on its business date with the Board's published "
           f"time; 25 September wanted and recorded from the week before, 8 October declined source silent "
           f"and the franc's own instrument not covered; `store lake` as e2e/expected.lake ({rows} rows); "
-          f"and a new container recording nothing twice")
+          f"and a new container recording nothing twice, its licence read on start")
 
 
 def main():

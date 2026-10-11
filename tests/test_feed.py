@@ -192,3 +192,28 @@ async def test_each_currency_is_resolved_as_of_now(tmp_path: Path) -> None:
     recorder.answer("ResolveIdentifier", resolved)
     await feed(tmp_path, recorder).check()
     assert asked and set(asked) == {int(AT.timestamp() * 1_000_000_000)}
+
+
+async def test_a_currency_comes_from_the_master_through_core(tmp_path: Path) -> None:
+    """Contract v20: the plugin asks for each currency by its ISO 4217 code
+    alone, as of now, and takes the record core answers -- the platform
+    master's, pulled -- never defining one itself; a code core cannot answer
+    is reported missing, also as of now, and its rates wait."""
+    recorder = Recorder("fed-h10")
+    now = int(AT.timestamp() * 1_000_000_000)
+
+    def resolved(params: ops.ResolveIdentifierParams) -> ops.ResolveIdentifierResult:
+        (identifier,) = params.identifiers
+        assert identifier.scheme == "iso4217" and params.as_of_ns == now
+        if identifier.value == "KRW":
+            return ops.ResolveIdentifierResult(found=False, miss_reason=ops.MISS_REASON_NOT_FOUND)
+        return ops.ResolveIdentifierResult(found=True, instrument_id=f"INS-{identifier.value}")
+
+    recorder.answer("ResolveIdentifier", resolved)
+    work = feed(tmp_path, recorder)
+    await work.check()
+    (missing,) = recorder.on("ReportMissingInstrument")
+    assert missing.as_of_ns == now and missing.identifiers[0].value == "KRW"
+    assert work.status.currencies["USD"].instrument_id == "INS-USD"
+    rows = {sent.row for sent in recorder.sent}
+    assert rows <= {"ResolveIdentifier", "ReportMissingInstrument", "RecordPrices"}, rows

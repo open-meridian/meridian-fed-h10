@@ -12,9 +12,14 @@ storage (decisions/028: a plugin's process holds nothing it cannot lose).
 is resolved to the deployment's cash instrument by its ISO 4217 code (W3.1);
 one that does not resolve, or resolves to two records, is reported missing
 (W3.2) with why, its rates left out until it does, and tried again on the
-next release. The dollar's instrument is the subject of every rate quoted
-per dollar; the euro's, the pound's, the Australian and the New Zealand
-dollar's, of their own (convert.py).
+next release. Each resolve is as of the moment it is asked, said (an as-of
+left out is the epoch, which no identifier window covers). The plugin mints
+no currency: from contract v20 core answers a code the deployment does not
+hold with the platform master's currency, pulled through the conductor, and
+mints a stub only while the master cannot be reached or does not hold it.
+The dollar's instrument is the subject of every rate quoted per dollar; the
+euro's, the pound's, the Australian and the New Zealand dollar's, of their
+own (convert.py).
 
 **Wants.** The lake asks for what a reader read and it does not hold
 (ObservationsWanted): a business date, a range, or the latest. The plugin
@@ -111,6 +116,12 @@ class Status:
     wants: list[Answered] = field(default_factory=list)
     standing: dict[str, tuple[int, datetime]] = field(default_factory=dict)
     fetches: int = 0
+    #: Subjects declined since start, and the last time a rate was recorded
+    #: or restated.
+    declined: int = 0
+    last_recorded_at: datetime | None = None
+    #: The datasets a deployment admin has licensed (contract v20), as read.
+    licensed: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -153,7 +164,7 @@ class Feed:
         return f"{self.plugin.identity.instance_id}:{DAILY}"
 
     def use(self, board: Board) -> None:
-        """Read from `board` from now on: synthetic mode turned on or off."""
+        """Read from `board` from now on: sample data turned on or off."""
         if board.mode != self.board.mode:
             self.board = board
             self.status.mode = board.mode
@@ -222,6 +233,7 @@ class Feed:
                 asset_class="cash",
                 identifiers=[identifier],
                 reason=reason,
+                as_of_ns=_ns(self.now()),
                 observed_at_ns=_ns(self.now()),
             )
         return self.instruments()
@@ -279,6 +291,8 @@ class Feed:
             outcome = outcome + Outcome(done.recorded, done.restated, done.unchanged)
         self.status.recorded += outcome.recorded
         self.status.restated += outcome.restated
+        if outcome.recorded or outcome.restated:
+            self.status.last_recorded_at = self.now()
         self.status.unchanged += outcome.unchanged
         return outcome
 
@@ -340,6 +354,7 @@ class Feed:
             reason=reason,
         )
         declined[reason] = declined.get(reason, 0) + len(subjects)
+        self.status.declined += len(subjects)
 
     async def on_want(self, heard: meridian.Heard[ops.ObservationsWantedEvent]) -> None:
         """Record what the lake wants of the plugin's dataset, or decline it."""

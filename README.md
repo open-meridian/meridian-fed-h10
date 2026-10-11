@@ -5,12 +5,12 @@ Reserve Board's [H.10](https://www.federalreserve.gov/releases/h10/current/defau
 foreign exchange rates into a deployment's lake: each week's noon buying
 rates in New York for about two dozen currencies against the US dollar, each
 rate the price of one currency's cash instrument in the other, as the Board
-quotes it. It holds the `dgm` role. This is release 0.1.0, not released yet.
+quotes it. It holds the `data` role, a data plugin. This is release 0.2.0, not released yet.
 How to set it up and use it is in [docs/](docs/README.md); how a plugin like
 it is built is documented at [open-meridian.dev](https://open-meridian.dev).
 
-It is built on the SDK it pins, `open-meridian==0.22.0`, which declares
-contract v18, the lake prices the book (meridian-design
+It is built on the SDK it pins, `open-meridian==0.24.0`, which declares
+contract v20; its work is the lake prices the book (meridian-design
 `plans/the-lake-prices-the-book.md`, row 7).
 
 ## What it records
@@ -30,38 +30,41 @@ contract v18, the lake prices the book (meridian-design
   Board's server says the release's page was last modified.
 - **Exact.** Every rate is made a decimal from the text the Board printed.
 - **Every currency resolved** to the deployment's cash instrument by its
-  ISO 4217 code, a miss reported with why; a day the Board marks `ND` is no
+  ISO 4217 code, as of the moment it is asked, a miss reported with why.
+  The plugin mints no currency: core answers a code the deployment does not
+  hold with the platform master's currency, pulled (contract v20); a day the Board marks `ND` is no
   rate, never a zero; its dollar indexes are not recorded.
 - **Every response kept** as received, in the storage the deployment grants,
   and named by each row it was read into.
 
-Its pages, under Manage alone, show how it reaches the Board and what it
-serves, never a rate: **Connection** (`read_connection`) and **Datasets**
-(`read_datasets`), each the same through the deployment's MCP.
+Its pages, under Manage alone, are the data role's, the same on every data
+plugin, and show how it reaches the Board and what it serves, never a rate:
+**Connection** (`read_connection`, "No key needed", "Does not stream", and
+the Board's release calendar) and **Datasets** (`read_datasets`, saying
+whether a deployment admin has licensed the dataset), each the same through
+the deployment's MCP. The data role's figures are on its Summary. It does
+not stream, so it has no restart's gap to backfill.
 
 ## Checking it
 
     make ci-local                                  # lint, tests, plugin check, image, e2e: the pre-push gate
     make preview SHOTS=<dir>                       # each page in a browser with the kit, at 1440x900 and 390x844
 
-`make e2e` runs it on core's plugin harness (core e4a14fc, contract v18 as
-ruled 2026-10-10) beside a reading plugin: the Board unreachable at first, then synthetic
-mode reading the committed release of 5 October 2026, the rates read back in
+`make e2e` runs it on core's plugin harness (core v20, local) beside a
+reading plugin: the Board unreachable at first, then sample data reading the committed release of 5 October 2026, the rates read back in
 the right instruments, a past week wanted and recorded, a week not yet
 published and a currency it never prices declined, both tools answering what
-the pages show, and a new container recording nothing twice.
+the pages show, and a new container recording nothing twice and reading
+its licence on start.
 
-**The `dgm` suite.** `tests/test_suite.py` runs the SDK's suite on the
-plugin's own conversion. H.10 presents eight of its thirteen cases. The
-other five ask for what the Board never states -- a day's open, high, low and
-volume, a stablecoin's quote, a venue, a security another source named by
-its symbol and CUSIP -- and the SDK's runner lets only a closed-list case be
-not presented, so by its rule the plugin is short of the suite and not
-verified; the test holds it to exactly that. Whether a source may say it
-states no bars, tokens, venues or securities is the suite's owner's to
-decide.
+**The data suite.** `tests/test_suite.py` runs the SDK's suite on the
+plugin's own conversion, and it passes: nine cases are presented, its
+dataset's licences among them; every other case is about a kind of data the
+Board never states -- a day's open, high, low and volume, a crypto asset, a
+venue, a security another source named, trades, quotes -- and is not
+presented, with why, as the suite lets it.
 
-**CI is red until open-meridian 0.22.0 is on PyPI** and its base image on
+**CI is red until open-meridian 0.24.0 is on PyPI** and its base image on
 ghcr.io: the runners install the pin from there. Locally the Makefile builds
 both from the sibling meridian-python checkout.
 

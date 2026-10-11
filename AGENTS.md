@@ -1,11 +1,11 @@
 # meridian-fed-h10
 
 The Federal Reserve Board's H.10 foreign exchange rates as an Open Meridian
-`dgm` plugin, in Python on the open-meridian SDK (0.22.0, contract v18). It
+data plugin, in Python on the open-meridian SDK (0.24.0, contract v20). It
 runs beside a sidecar in a Meridian deployment and puts each week's noon
 buying rates into the deployment's lake, each rate the price of one
 currency's cash instrument in the other, as the Board quotes it. What it may
-publish and subscribe to comes from its one role, `dgm`, declared in
+publish and subscribe to comes from its one role, `data`, declared in
 `pyproject.toml`, once a deployment admin approves it. Its plan is
 meridian-design's `plans/the-lake-prices-the-book.md`, row 7.
 
@@ -31,13 +31,18 @@ meridian-design's `plans/the-lake-prices-the-book.md`, row 7.
 - `src/fed_h10/raw.py` keeps every response as received in the storage the
   deployment grants, and moves months past their window as the SDK's
   settings say.
-- `src/fed_h10/page.py` and `templates/` are the two pages under Manage,
-  Connection and Datasets, each a read tool (`read_connection`,
-  `read_datasets`) on the deployment's MCP.
+- `src/fed_h10/page.py`, `records.py` and `templates/` are the data role's
+  two pages under Manage (spec/plugin-pages-follow-their-role), Connection
+  and Datasets, each a read tool (`read_connection`, `read_datasets`) on the
+  deployment's MCP answering the role's common fields,
+  `meridian.roles.data`'s records extended with H.10's. The templates
+  extend the role's and add H.10's nuance at its blocks alone
+  (`vendor_notices`, `vendor_rows`, `vendor_columns`, `vendor_sections`):
+  never rename, reorder or drop a common section, row, column or label.
 
 ## The rules it keeps
 
-- **A dgm shows no price.** Its pages show its connection, its datasets and
+- **A data plugin shows no price.** Its pages show its connection, its datasets and
   how its subjects resolve; a rate is the reading roles' to show. A test
   holds every page to it.
 - **Exact decimals.** A rate is made a `Decimal` from the text the Board
@@ -46,8 +51,9 @@ meridian-design's `plans/the-lake-prices-the-book.md`, row 7.
   currency is quoted, read from each release, never a table here. A row the
   plugin cannot name is counted and shown, not recorded; a day marked `ND`
   is no rate, never a zero.
-- **Every subject resolved first,** by its ISO 4217 code, and every miss
-  reported with its reason; a currency that does not resolve is left out
+- **Every subject resolved first,** by its ISO 4217 code, as of now, said,
+  and every miss reported with its reason; never a currency defined here:
+  core answers with the platform master's, pulled; a currency that does not resolve is left out
   until it does, and the next check tries again.
 - **Every row names its raw record,** kept before anything is read from it.
 - **Stateless.** The process holds nothing it cannot lose: a restart reads
@@ -56,10 +62,10 @@ meridian-design's `plans/the-lake-prices-the-book.md`, row 7.
   ones with `curl` from the Board's site, gzip them into
   `src/fed_h10/responses/`, and list them in its `index.json` with their
   Date and Last-Modified headers.
-- **The suite.** `tests/test_suite.py` runs `meridian.suites.run("dgm", ...)`
-  on the plugin's own conversion. H.10 presents eight of its thirteen cases;
-  the five it cannot (a bar, a stablecoin, a venue resolved, a venue not
-  held, a security another source named) fail for want of a producer, which the test holds exactly. Never
+- **The suite.** `tests/test_suite.py` runs `meridian.suites.run("data", ...)`
+  on the plugin's own conversion, and passes: a case about a kind of data
+  the Board never states (a bar, a crypto asset, a venue, a security another
+  source named, trades, quotes) is named in `not_presented` with why. Never
   write a producer that invents what the Board does not state.
 
 ## Checking it locally
@@ -263,7 +269,7 @@ theirs.
 
 ### Start the loop
 
-The instance is called `fed-h10` below. Use whatever the person
+The instance is called `fed_h10` below. Use whatever the person
 wants it called, and the same name in every command.
 
 **The first time an instance is launched, the person approves what it asks
@@ -276,7 +282,7 @@ Run it in the background, and keep it running for the whole session:
 
 ```sh
 mkdir -p .meridian
-meridian plugin dev --instance fed-h10 --yes --json > .meridian/dev.jsonl 2> .meridian/dev.err
+meridian plugin dev --instance fed_h10 --yes --json > .meridian/dev.jsonl 2> .meridian/dev.err
 ```
 
 Its output goes under `.meridian/` on purpose. `plugin dev` sends every file
@@ -320,16 +326,16 @@ Ask the question that answers what you changed:
 
 | To know | Run |
 |---|---|
-| What a page shows, as the person is served it | `meridian plugin open --instance fed-h10 --level manage --print /` for Connection, and `--print /datasets` for Datasets, both under Manage, the only level its pages are declared with |
-| What the plugin printed or logged since your change | `meridian plugin logs --instance fed-h10 --since <R-1>` |
-| What the sidecar refused it, or what else happened | `meridian plugin events --instance fed-h10 --since <R-1> --json` |
-| What the person sees in a browser | `meridian plugin open --instance fed-h10 --level manage`: a link one browser opens once, at that level. Give it to the person, or open it in your browser pane |
+| What a page shows, as the person is served it | `meridian plugin open --instance fed_h10 --level open --print /` for Accounts under Open (`--level view` under View), and `--level manage --print /setup` for Setup under Manage: any path on the plugin, at a level it is declared with |
+| What the plugin printed or logged since your change | `meridian plugin logs --instance fed_h10 --since <R-1>` |
+| What the sidecar refused it, or what else happened | `meridian plugin events --instance fed_h10 --since <R-1> --json` |
+| What the person sees in a browser | `meridian plugin open --instance fed_h10 --level open`: a link one browser opens once, at that level. Give it to the person, or open it in your browser pane |
 
 `--level` is the home's button the session is opened by: `manage`, `open` or
 `view`. Name it every time. A page answers 403 at a level it is not declared
 with, and without `--level` the dashboard opens at the first level the person
-holds, Manage before Open before View; this plugin's pages are all under
-Manage.
+holds, Manage before Open before View, so on a development deployment, where
+they hold `admin`, `/` would be asked under Manage and refused.
 
 `--print` exits non-zero when the plugin answers with an error, and prints what
 it answered. Prefer it to a browser for checking your own work: it needs no
@@ -354,7 +360,7 @@ When the person is satisfied:
    exits 0.
 2. Raise `version` in `pyproject.toml`. A version is never replaced.
 3. Show the person the roles again, and get their yes.
-4. Run `meridian plugin dev --release --instance fed-h10 --yes`.
+4. Run `meridian plugin dev --release --instance fed_h10 --yes`.
 
 That uploads this directory as that version and runs it in place of the live
 instance. It is then an ordinary version in the deployment's catalogue.
@@ -362,4 +368,4 @@ instance. It is then an ordinary version in the deployment's catalogue.
 ### Stop
 
 Stop the background `plugin dev`. The instance keeps running, live, as it was.
-`meridian plugin stop fed-h10` ends it, which is the person's call.
+`meridian plugin stop fed_h10` ends it, which is the person's call.

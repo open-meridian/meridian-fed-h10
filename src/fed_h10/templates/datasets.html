@@ -1,37 +1,22 @@
-{#- Datasets, at admin: what the plugin serves the lake -- its dataset, the
-    wants it keeps current, and each currency H.10 publishes, with the
-    deployment's instrument for it. No rate: prices are the reading roles'. -#}
-{% extends "meridian/base.html" %}
-{% import "_kit.html" as kit with context %}
-{% block status %}{{ kit.status(state[0], state[1], state[2], checked_at) }}{% endblock %}
-{% block content %}
-{% if data.unconverted %}<div class="notice warn" role="status">The Board printed a currency the plugin cannot name, not recorded:<ul class="plain">{% for name in data.unconverted %}<li>{{ name }}</li>{% endfor %}</ul></div>{% endif %}
-<section class="panel">
-<div class="list-row one-line"><div class="grow"><span class="title"><code>{{ data.dataset.dataset }}</code></span> <span class="badge good">Public domain</span>
-<span class="meta">{{ data.dataset.cadence | capitalize }} · {{ data.dataset.modes | join(", ") }} · prices · New York noon · {{ data.dataset.history_days // 365 }} years</span></div>
-<details class="row-detail" name="dataset"><summary aria-label="Details of the dataset">…</summary><div class="row-detail-pop"><h3>{{ data.dataset.dataset }}</h3><dl>
-<dt>Vendor</dt><dd>{{ data.dataset.vendor }}</dd>
-<dt>Data</dt><dd>{{ data.dataset.data_types | join(", ") }}: each rate the price of a currency's cash instrument in the other, as the Board quotes it</dd>
-<dt>Modes</dt><dd>{{ data.dataset.modes | join(", ") }}: each release pushed when it appears; a past week pulled when the lake wants it</dd>
-<dt>Day</dt><dd>{{ data.dataset.day }}; a rate's date is its business date</dd>
-<dt>History</dt><dd>{{ data.dataset.history_days }} days</dd>
-<dt>Venue</dt><dd>{{ data.dataset.venue }}</dd>
-<dt>Licence, as the catalogue declares it</dt><dd>{{ data.dataset.licence }}. The deployment's licence, on its Data sources page, confirms or replaces it.</dd>
-<dt>At the vendor</dt><dd>{{ data.entitled_at_vendor }}</dd>
-</dl></div></details></div>
-<div class="list-row one-line"><div class="grow"><span class="title">Wants</span>
-<span class="meta">{{ data.standing | length }} standing, kept current by each release{% for want in shown_wants %} · {{ want.asked }}: {{ want.recorded }} recorded{% if want.declined %}, {{ want.declined }}{% endif %}{% else %} · none answered yet{% endfor %}</span></div>
-{% if data.wants or data.standing %}<details class="row-detail" name="dataset"><summary aria-label="Details of the wants">…</summary><div class="row-detail-pop"><h3>Wants</h3><dl>
-{% for want in data.standing %}<dt>Standing {{ want.want_id }}</dt><dd>{{ want.subjects }} subjects, since {{ want.at | moment }}</dd>{% endfor %}
-{% for want in data.wants %}<dt>{{ want.asked }}{% if want.standing %}, standing{% endif %}</dt><dd>{{ want.subjects }} subjects, {{ want.recorded }} rows recorded{% if want.declined %}, declined {{ want.declined }}{% endif %}, {{ want.at | moment }}</dd>{% endfor %}
-</dl></div></details>{% endif %}</div>
-</section>
+{#- Datasets, at admin: the data role's (meridian/roles/data/datasets.html),
+    with H.10's nuance at its blocks only -- the Board's rows it could not
+    name, how many wants there are past the latest few drawn, and each
+    currency H.10 publishes, with the deployment's instrument for it,
+    searched and paged. No rate: prices are the reading roles'. -#}
+{% extends "meridian/roles/data/datasets.html" %}
+{% import "meridian/kit.html" as kit %}
+{% block status %}{{ kit.status({"state": state[0], "label": state[1], "detail": state[2], "at": checked_at, "at_label": "Last checked"}) }}{% endblock %}
+{% block vendor_notices %}
+{% if data.unconverted %}<div class="notice warn" role="status">The Board printed a currency the plugin cannot name, not recorded: {{ data.unconverted|join("; ") }}</div>{% endif %}
+{% if wants > data.wants|length %}<p class="muted">The latest {{ data.wants|length }} of {{ wants }} wants are shown.</p>{% endif %}
+{% endblock %}
+{% block vendor_sections %}
 <section class="panel">
 {% if data.currencies %}
-<div class="panel-body"><form class="filters" method="get" role="search">
+<form class="filters" method="get" role="search">
 <input type="search" name="q" value="{{ query }}" placeholder="Search currencies" aria-label="Search currencies by code or name">
 <button>Search</button>{% if query %} <a href="?">Clear</a>{% endif %}
-<span class="muted">{{ shown | length }} of {{ data.currencies | length }}</span></form></div>
+<span class="muted">{{ shown|length }} of {{ data.currencies|length }}</span></form>
 {% if shown %}
 <om-pager>
 <table class="one-line">
@@ -47,7 +32,7 @@
 <div class="empty-state"><strong>No currency matches "{{ query }}"</strong><p>Search by its ISO code or the Board's name for it.</p></div>
 {% endif %}
 {% else %}
-<div class="empty-state"><strong>No release read yet</strong><p>Each currency appears once the plugin has read the Board's current release.</p></div>
+<p class="muted"><strong>No release read yet:</strong> each currency appears once the plugin has read the Board's current release.</p>
 {% endif %}
 </section>
 {% endblock %}

@@ -46,20 +46,25 @@ def test_each_page_is_managed_alone(client: PageClient) -> None:
 
 def test_connection_says_how_the_board_is_reached(client: PageClient) -> None:
     text = client.get(CONNECTION, "admin").text
-    assert 'state="ok"' in text and "H.10 read" in text
-    assert "Synthetic mode" in text
+    # The data role's sections, in its order, then H.10's release calendar.
+    assert text.index("<h2>Key</h2>") < text.index("<h2>Limits and use</h2>")
+    assert text.index("<h2>Stream</h2>") < text.index("<h2>The Board's H.10</h2>")
+    assert 'state="ok"' in text and "Sample data" in text
+    assert "No key needed" in text and "Does not stream" in text
     assert "Mon 05 Oct" in text  # the latest release
     assert "Mon 12 Oct" in text  # the next one expected
     assert "public domain" in text
-    assert 'href="/.meridian/ui/0.10.0/meridian.css"' in text
+    assert 'href="/.meridian/ui/0.12.0/meridian.css"' in text
 
 
 def test_datasets_lists_the_dataset_and_every_currency(client: PageClient) -> None:
     text = client.get(DATASETS, "admin").text
-    assert "fed-h10:daily" in text and "Public domain" in text
+    assert text.index("<h2>Served</h2>") < text.index("<h2>Wants</h2>")
+    assert "fed-h10:daily" in text and "kept; public domain" in text
+    assert "Not licensed yet" in text
     assert text.count("<tr data-code=") == 24
     assert "<om-pager>" in text
-    assert "1 standing" in text and "2026-09-25: 19 recorded" in text
+    assert "Kept current" in text and "2026-09-25" in text
     # No rate: prices are the reading roles' to show.
     assert "0.8293" not in text and "1.1259" not in text
 
@@ -70,21 +75,25 @@ def test_the_tools_answer_what_the_pages_show(client: PageClient) -> None:
     connection = client.call_tool("read_connection")
     assert connection.outcome == "unchanged", connection.json
     assert connection.data["latest_release"] == "2026-10-05"
-    assert connection.data["first_day"] == "2026-09-28" and connection.data["mode"] == "synthetic"
+    assert connection.data["first_day"] == "2026-09-28"
+    assert connection.data["mode"] == "Sample data" and connection.data["credentials"] == []
+    assert connection.data["sessions"] is None
     assert connection.data["next_release"] == "2026-10-12"
     assert connection.data["published_at"] == "2026-10-05T20:15:04+00:00"
     datasets = client.call_tool("read_datasets")
     assert datasets.outcome == "unchanged"
     data = datasets.data
-    assert data["dataset"]["dataset"] == "fed-h10:daily"
-    assert data["dataset"]["modes"] == ["push", "pull"]
+    (served,) = data["served"]
+    assert served["dataset"] == "fed-h10:daily" and served["arrives"] == "push, pull"
+    assert served["recorded"] >= 19 and served["licensed"] is False
     codes = [c["code"] for c in data["currencies"]]
     assert codes[0] == "USD" and len(codes) == 24
     euro = next(c for c in data["currencies"] if c["code"] == "EUR")
     assert euro["quoted"] == "US dollars per EUR" and euro["price_of"] == "EUR in USD"
     page = client.get(DATASETS, "admin").text
     assert all(c["instrument_id"] in page for c in data["currencies"])
-    assert [w["want_id"] for w in data["standing"]] == ["w-standing"]
+    assert [w["want_id"] for w in data["wants"]][0] == "w-standing"
+    assert data["wants"][0]["state"] == "Kept current"
 
 
 def test_before_the_first_check(tmp_path: Path) -> None:
@@ -102,7 +111,7 @@ def test_the_board_not_reached(tmp_path: Path) -> None:
     )
     hold(work)
     text = PageClient(pages).get(CONNECTION, "admin").text
-    assert 'state="error"' in text and "The Board was not reached" in text
+    assert 'state="error"' in text and "Not answering" in text
     assert "ConnectionRefusedError" in text
 
 
@@ -118,3 +127,23 @@ def test_the_currencies_are_searched(client: PageClient) -> None:
     assert "No currency matches" in nothing and "0 of 24" in nothing
     # The tool answers every currency, whatever a browser searched.
     assert len(client.call_tool("read_datasets").data["currencies"]) == 24
+
+
+def test_a_licensed_dataset_is_said_so(client: PageClient) -> None:
+    page_module._held["feed"].status.licensed = frozenset({"fed-h10:daily"})
+    (served,) = client.call_tool("read_datasets").data["served"]
+    assert served["licensed"] is True
+
+
+def test_the_figures_are_the_data_roles_in_its_order(client: PageClient) -> None:
+    from fed_h10.page import figures
+
+    work = page_module._held["feed"]
+    said = figures(work.status, work)
+    assert [f.label for f in said] == [
+        "Connection",
+        "Entitled at the vendor",
+        "Stream",
+        "Last recorded",
+    ]
+    assert said[0].value == "Sample data" and said[2].value == "Does not stream"

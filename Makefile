@@ -35,10 +35,10 @@ MERIDIAN_VERSION := $(shell sed -n 's/^ *MERIDIAN_VERSION: *\([0-9][0-9.]*\).*/\
 # weekly.
 RUNTIME_IMAGE ?= ghcr.io/open-meridian/meridian-runtime:e4a14fc@sha256:44c919b2d0d67fd873ea4829643f029bacca691ae0c2e85246bfc920a27850b3
 HARNESS_IMAGE ?= ghcr.io/open-meridian/meridian-harness:e4a14fc@sha256:c1d816676ae2163cf03fa984f82105353f29921d2aca823e7eb7b5717e86b7ab
-# The harness's two plugins: this one, as instance fed-h10, holding dgm as
+# The harness's two plugins: this one, as instance fed-h10, holding data as
 # pyproject.toml declares; and the reader, a reporting plugin the e2e runs
 # from e2e/reader.py in the same image.
-PLUGINS := [{"instance": "fed-h10", "image": "$(IMAGE)", "roles": ["dgm"]}, {"instance": "reader", "image": "$(IMAGE)", "roles": ["reporting"]}]
+PLUGINS := [{"instance": "fed-h10", "image": "$(IMAGE)", "roles": ["data"]}, {"instance": "reader", "image": "$(IMAGE)", "roles": ["reporting"]}]
 
 # The kit's built files, where `make preview SHOTS=...` serves them beside
 # the pages for the browser: a meridian-ui checkout's dist/.
@@ -55,8 +55,8 @@ help:
 	@echo "  make lint           ruff and mypy, strict"
 	@echo "  make check          what check.yaml runs: meridian plugin check --verified --run-tests, in a container"
 	@echo "  make image          build the plugin's image, as upload would, and check it"
-	@echo "  make e2e            the plugin, in synthetic mode, on the plugin harness of the runtime it pins: its rates in the lake"
-	@echo "  make preview        write preview/: each page on synthetic data, linking the kit;"
+	@echo "  make e2e            the plugin, on sample data, on the plugin harness of the runtime it pins: its rates in the lake"
+	@echo "  make preview        write preview/: each page on sample data, linking the kit;"
 	@echo "                      SHOTS=<dir> also checks each in a browser with the kit, at 1440x900 and 390x844, and keeps a screenshot"
 	@echo "  make fmt            apply the formatter"
 	@echo "  make install-hooks  point git at hooks/ so push fires ci-local"
@@ -125,7 +125,7 @@ image:
 
 # The plugin on the plugin harness published with the runtime it pins (the
 # harness's README, in HARNESS_IMAGE), beside a reading plugin: its first
-# check finds the Board unreachable (the e2e's hosts file), synthetic mode
+# check finds the Board unreachable (the e2e's hosts file), sample data
 # reads the committed release of 5 October 2026, and its rates are in the
 # lake as e2e/expected.lake says, read back by the reader in the right
 # instruments, a past week wanted and recorded, a week not yet published and
@@ -154,10 +154,10 @@ preview:
 	@$(DOCKER) build $(SDK_CONTEXT) -f Dockerfile.check --target test -t $(CHECK) . >/dev/null 2>&1 \
 		|| { echo "preview FAILED to build" >&2; exit 1; }
 	@mkdir -p preview
-	@for page in connection datasets datasets-search; do \
+	@for page in connection datasets datasets-search connection-first datasets-first; do \
 		docker run --rm $(CHECK) python -m fed_h10.preview $$page >preview/$$page.html || exit 1; \
 	done
-	@echo "preview: preview/connection.html, preview/datasets.html, preview/datasets-search.html"
+	@echo "preview: preview/connection.html, preview/datasets.html, preview/datasets-search.html, and the -first pages"
 	@if [ -n "$(SHOTS)" ]; then \
 		[ -d "$(KIT_DIST)" ] || { echo "preview FAILED: no kit at $(KIT_DIST); set KIT_DIST to a meridian-ui checkout's dist/" >&2; exit 1; }; \
 		mkdir -p "$(SHOTS)"; \

@@ -1,6 +1,6 @@
-"""What this version declares beside its role (W8.1, W4.1; the catalogue from
-contract v18), built from code and used twice: `__main__` registers with it,
-and `meridian plugin upload` reads it from the built image
+"""What this version declares beside its role, `data` (W8.1, W4.1; the
+catalogue from contract v18), built from code and used twice: `__main__`
+registers with it, and `meridian plugin upload` reads it from the built image
 (pyproject.toml's `[tool.meridian] declaration`).
 
 **The catalogue: one dataset, `daily`** (the plan's Q21: a daily dataset per

@@ -1,24 +1,17 @@
-"""The `dgm` suite (meridian.suites, contract v18), each case H.10 presents
-mapped to the plugin's own conversion of the Board's recorded responses.
+"""The data suite (meridian.suites, contract v20), each case H.10 presents
+mapped to the plugin's own conversion of the Board's recorded responses, the
+whole suite passing.
 
-H.10 presents eight of the suite's thirteen cases. Five ask for what the
-Board never states, and the plugin has no conversion for them, so they have
-no producer here:
-
-- `a-daily-bar`: H.10 is one rate a day, no open, high, low or volume;
-- `a-stablecoin-quote`: H.10 quotes currencies against the US dollar, no
-  crypto asset and no stablecoin;
-- `a-venue-resolved` and `a-venue-not-held`: the rates are the New York
-  Fed's certified noon buying rates, no venue's, so the dataset declares no
-  venue and no row names one.
-
-The SDK's runner lets only a closed-list case be "not presented", and none
-of these is one, so by the runner's rule the plugin is short of the suite
-and not verified: the test below holds it to exactly the eight it presents
-and to those five failing for want of a producer, never for a wrong answer.
-That the suite has no way for a source to say it states no bars, no tokens,
-no venue and no security is a question for the suite's owner (meridian-design
-matrix/boundaries/suites/dgm.yaml), raised with this build.
+H.10 is one noon buying rate a day for each currency the Board publishes
+against the US dollar. A case about a kind of data it never publishes
+(`about`, from contract v19) is not presented, with why (`NOT_PRESENTED`):
+a daily bar (one rate a day, no open, high, low or volume), a crypto
+asset's price, prices on a venue (the New York Fed's certified rates, no
+venue's), a security's price another source named, trades and quotes. A
+case about a field of a trade (`about_field`, from contract v20) is about
+trades, so not presented the same way; and so is a restart's gap,
+backfilled, which is about trades. Every other case is presented, its
+dataset's licences among them.
 
 `the-forming-day-restated`: H.10's day is never forming once published, but
 the Board does correct a published rate; the plugin records the corrected
@@ -33,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from meridian.plugin.v1 import operations_pb2 as ops
-from meridian.suites import Recorder, names, run
+from meridian.suites import Recorder, run, suite
 
 from fed_h10.board import CURRENT, Fetched
 from fed_h10.feed import Feed
@@ -41,12 +34,18 @@ from fed_h10.raw import RawStore
 
 from conftest import AT, DATASET, response, want
 
+#: Why each kind of data a case may be about is never published here.
+NEVER = {
+    "bars": "H.10 states one rate a day: no open, high, low or volume",
+    "a crypto asset's price": "H.10 quotes currencies against the US dollar: no token",
+    "prices on a venue": "H.10's rates are the New York Fed's, no venue's",
+    "a security's price": "H.10 rates currencies: no security another source named",
+    "trades": "H.10 states one rate a day: no trades",
+    "quotes": "H.10 states one rate a day: no quotes",
+}
+
 NOT_PRESENTED = {
-    "a-daily-bar": "H.10 states one rate a day: no open, high, low or volume",
-    "a-stablecoin-quote": "H.10 quotes currencies against the US dollar: no token",
-    "a-venue-resolved": "H.10's rates are the New York Fed's, no venue's",
-    "a-venue-not-held": "H.10's rates are the New York Fed's, no venue's",
-    "a-subject-another-source-resolved": "H.10 rates currencies: no security another source named",
+    case.name: NEVER[case.about] for case in suite("data").cases if case.about in NEVER
 }
 
 
@@ -110,6 +109,18 @@ def producers(tmp: Path) -> dict[str, Callable[[Recorder], Awaitable[None]]]:
 
         return produce
 
+    async def licences(recorder: Recorder) -> None:
+        # On start, its own declared datasets' licences (contract v20).
+        from fed_h10.__main__ import read_licences
+
+        recorder.answer(
+            "ListDatasets",
+            lambda _: ops.ListDatasetsResult(licences=[ops.DatasetLicence(dataset=DATASET)]),
+        )
+        feed = work(recorder)
+        await read_licences(recorder, feed)
+        assert feed.status.licensed == {DATASET}
+
     async def withdrawn(recorder: Recorder) -> None:
         _resolving(recorder)
         feed = work(recorder)
@@ -128,15 +139,15 @@ def producers(tmp: Path) -> dict[str, Callable[[Recorder], Awaitable[None]]]:
         "a-want-recorded-against": wanted(want("w-1", ["LCL-USD"], day="2026-09-25").message),
         "a-subject-declined": wanted(want("w-2", ["LCL-CHF"], day="2026-10-02").message),
         "a-standing-want-withdrawn": withdrawn,
+        "reads-its-datasets-licences": licences,
     }
 
 
-def test_the_dgm_suite(tmp_path: Path) -> None:
-    report = run("dgm", producers(tmp_path), instance_id="fed-h10")
-    presented = [name for name in names("dgm") if name not in NOT_PRESENTED]
-    assert report.passed_cases == presented, report.failures
-    assert set(report.failures) == set(NOT_PRESENTED)
-    assert all(why.startswith("no producer") for why in report.failures.values()), report.failures
+def test_the_data_suite_passes(tmp_path: Path) -> None:
+    report = run("data", producers(tmp_path), not_presented=NOT_PRESENTED, instance_id="fed-h10")
+    assert report.passed, report.failures
+    assert sorted(report.not_presented) == sorted(NOT_PRESENTED)
+    assert len(report.passed_cases) == 9
 
 
 def test_an_exact_price_never_passes_through_a_float(tmp_path: Path) -> None:
