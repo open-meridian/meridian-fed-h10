@@ -5,8 +5,8 @@
 # images pull without a token, H.10 needs no key, and synthetic mode reads
 # only the Board's responses committed with the plugin.
 #
-# Red until open-meridian 0.24.0 is on PyPI and its base image on ghcr.io: the
-# plugin's image is built on plugin-python:0.24.0, which a runner cannot pull
+# Red until open-meridian 0.25.0 is on PyPI and its base image on ghcr.io: the
+# plugin's image is built on plugin-python:0.25.0, which a runner cannot pull
 # before the SDK's release. Locally the Makefile builds it from the sibling
 # meridian-python checkout.
 #

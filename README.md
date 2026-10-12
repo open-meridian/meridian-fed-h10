@@ -5,12 +5,12 @@ Reserve Board's [H.10](https://www.federalreserve.gov/releases/h10/current/defau
 foreign exchange rates into a deployment's lake: each week's noon buying
 rates in New York for about two dozen currencies against the US dollar, each
 rate the price of one currency's cash instrument in the other, as the Board
-quotes it. It holds the `data` role, a data plugin. This is release 0.2.0, not released yet.
+quotes it. It holds the `data` role, a data plugin. This is release 0.3.0, not released yet.
 How to set it up and use it is in [docs/](docs/README.md); how a plugin like
 it is built is documented at [open-meridian.dev](https://open-meridian.dev).
 
-It is built on the SDK it pins, `open-meridian==0.24.0`, which declares
-contract v20; its work is the lake prices the book (meridian-design
+It is built on the SDK it pins, `open-meridian==0.25.0`, which declares
+contract v21; its work is the lake prices the book (meridian-design
 `plans/the-lake-prices-the-book.md`, row 7).
 
 ## What it records
@@ -64,7 +64,7 @@ Board never states -- a day's open, high, low and volume, a crypto asset, a
 venue, a security another source named, trades, quotes -- and is not
 presented, with why, as the suite lets it.
 
-**CI is red until open-meridian 0.24.0 is on PyPI** and its base image on
+**CI is red until open-meridian 0.25.0 is on PyPI** and its base image on
 ghcr.io: the runners install the pin from there. Locally the Makefile builds
 both from the sibling meridian-python checkout.
 
