@@ -10,8 +10,11 @@ asset's price, prices on a venue (the New York Fed's certified rates, no
 venue's), a security's price another source named, trades and quotes. A
 case about a field of a trade (`about_field`, from contract v20) is about
 trades, so not presented the same way; and so is a restart's gap,
-backfilled, which is about trades. Every other case is presented, its
-dataset's licences among them.
+backfilled, which is about trades. Contract v22's calendar cases
+(`about` calendars and settlement dates) are not presented either: the
+plugin records each rate as the Board publishes it and never reads a
+settlement calendar or asks for a settlement date. Every other case is
+presented, its dataset's licences among them.
 
 `the-forming-day-restated`: H.10's day is never forming once published, but
 the Board does correct a published rate; the plugin records the corrected
@@ -42,6 +45,11 @@ NEVER = {
     "a security's price": "H.10 rates currencies: no security another source named",
     "trades": "H.10 states one rate a day: no trades",
     "quotes": "H.10 states one rate a day: no quotes",
+    "calendars": (
+        "records each rate the Board publishes, a day it marks ND as no rate: "
+        "reads no settlement calendar"
+    ),
+    "settlement dates": "records daily rates as published; never computes a settlement date",
 }
 
 NOT_PRESENTED = {
