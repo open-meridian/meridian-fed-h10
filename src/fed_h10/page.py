@@ -38,7 +38,7 @@ from meridian.roles import data
 from . import records
 from .board import BASE, CURRENT, release_days
 from .currencies import USD
-from .declaration import CADENCE, DAILY_DATASET, HISTORY, mode_name
+from .declared import CADENCE, DAILY_DATASET, HISTORY, mode_name
 from .feed import Feed, Status
 
 TITLE = "Federal Reserve H.10"

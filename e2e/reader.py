@@ -104,7 +104,8 @@ def serve(reader):
 
 async def main():
     plugin = await meridian.connect(
-        interface=Interface(PORT, "The e2e's reader", pages=[Page("/", "Prices", levels=["read"])]),
+        # Contract v25: what the stand-in registers is its declaration.
+        declaration=meridian.Declaration(interface=Interface(PORT, "The e2e's reader", pages=[Page("/", "Prices", levels=["read"])]))
     )
     print(f"reader registered as {plugin.identity.instance_id}", flush=True)
     threading.Thread(target=serve, args=(Reader(plugin),), daemon=True).start()
