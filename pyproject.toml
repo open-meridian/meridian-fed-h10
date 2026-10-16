@@ -12,8 +12,9 @@ requires-python = ">=3.11"
 # speaks one version of the contract (v18), and a range would let a rebuild
 # pick up another. The Dockerfile's base is the same version. The Board's
 # pages are read with the standard library: no third-party dependency.
+# PLACEHOLDER (v25): open-meridian 0.29.0 (SDK v25) is not on PyPI yet.
 dependencies = [
-  "open-meridian==0.26.0",
+  "open-meridian==0.29.0",
 ]
 
 [project.urls]
