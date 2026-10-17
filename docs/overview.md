@@ -6,6 +6,8 @@ business day. This plugin reads each release from the Board's site and puts
 its rates into your deployment's lake, where a reporting plugin values your
 positions in another currency.
 
+It is a data plugin: its first-use path, its two pages and its Summary figures are every data plugin's, described once on [Using a data plugin](https://open-meridian.dev/how-to/using-a-data-plugin/). These sections cover what is H.10's own.
+
 ## What a rate means here
 
 A rate is a price: the price of one currency's cash in another. The plugin

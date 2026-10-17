@@ -13,8 +13,9 @@ trades, so not presented the same way; and so is a restart's gap,
 backfilled, which is about trades. Contract v22's calendar cases
 (`about` calendars and settlement dates) are not presented either: the
 plugin records each rate as the Board publishes it and never reads a
-settlement calendar or asks for a settlement date. Every other case is
-presented, its dataset's licences among them.
+settlement calendar or asks for a settlement date; nor contract v23's
+outcomes, H.10 listing no event contract. Every other case is presented,
+its dataset's licences among them.
 
 `the-forming-day-restated`: H.10's day is never forming once published, but
 the Board does correct a published rate; the plugin records the corrected
@@ -29,7 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from meridian.plugin.v1 import operations_pb2 as ops
-from meridian.suites import Recorder, run, suite
+from meridian.suites import ANSWERED_BY_SDK, Recorder, run, suite
 
 from fed_h10.board import CURRENT, Fetched
 from fed_h10.feed import Feed
@@ -50,6 +51,8 @@ NEVER = {
         "reads no settlement calendar"
     ),
     "settlement dates": "records daily rates as published; never computes a settlement date",
+    "outcomes": "H.10 rates currencies: no event contract, so no outcome",
+    "disputed outcomes": "H.10 rates currencies: no event contract, so no outcome disputed",
 }
 
 NOT_PRESENTED = {
@@ -155,7 +158,9 @@ def test_the_data_suite_passes(tmp_path: Path) -> None:
     report = run("data", producers(tmp_path), not_presented=NOT_PRESENTED, instance_id="fed-h10")
     assert report.passed, report.failures
     assert sorted(report.not_presented) == sorted(NOT_PRESENTED)
-    assert len(report.passed_cases) == 9
+    # Contract v24: the two cases every suite holds, which the SDK answers.
+    assert len(report.passed_cases) == 11
+    assert report.answered_by_sdk == list(ANSWERED_BY_SDK)
 
 
 def test_an_exact_price_never_passes_through_a_float(tmp_path: Path) -> None:

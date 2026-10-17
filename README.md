@@ -9,8 +9,8 @@ quotes it. It holds the `data` role, a data plugin. This is release 0.4.0, not r
 How to set it up and use it is in [docs/](docs/README.md); how a plugin like
 it is built is documented at [open-meridian.dev](https://open-meridian.dev).
 
-It is built on the SDK it pins, `open-meridian==0.26.0`, which declares
-contract v22; its work is the lake prices the book (meridian-design
+It is built on the SDK it pins, `open-meridian==0.29.0`, which declares
+contract v25 (its whole declaration, and docs/, which a deployment shows on its Documentation tab); its work is the lake prices the book (meridian-design
 `plans/the-lake-prices-the-book.md`, row 7).
 
 ## What it records
@@ -67,8 +67,8 @@ cases: the plugin records each rate the Board publishes, a day it marks ND
 as no rate, and never reads a settlement calendar or asks for a settlement
 date.
 
-**CI is red until open-meridian 0.26.0 is on PyPI** and its base image on
-ghcr.io: the runners install the pin from there. Locally the Makefile builds
+**open-meridian 0.29.0 is on PyPI** and its base image on ghcr.io: the
+runners install the pin from there. Locally the Makefile builds
 both from the sibling meridian-python checkout.
 
 ## The terms, summarised

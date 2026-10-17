@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from fed_h10.declaration import DAILY_DATASET, DECLARATION, mode_name
+from fed_h10.declaration import DECLARATION
+from fed_h10.declared import DAILY_DATASET, mode_name
 
 
 def test_one_daily_dataset_of_prices() -> None:

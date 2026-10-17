@@ -49,7 +49,7 @@ from meridian.plugin.v1 import operations_pb2 as ops
 from .board import CURRENT, Board, BoardUnreachable, Fetched, dated, release_days, utc_now
 from .convert import NEW_YORK, codes, quoted, to_prices
 from .currencies import USD, code_of
-from .declaration import DAILY, HISTORY
+from .declared import DAILY, HISTORY
 from .raw import RawStore
 from .release import NotARelease, Release, last_modified_ns, parse
 
